@@ -1,0 +1,3 @@
+tracing:
+  service-name: {{ project-name }}
+  otlp-exporter-endpoint: http://localhost:4317
