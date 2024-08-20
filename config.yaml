@@ -1,3 +1,5 @@
-tracing:
-  service-name: {{ project-name }}
-  otlp-exporter-endpoint: http://localhost:4317
+telemetry:
+  tracing:
+    enabled: false
+    service_name: "{{ project-name }}"
+    otlp_exporter_endpoint: "http://localhost:4317"

@@ -1,3 +1,4 @@
+use crate::telemetry;
 use figment::{
     providers::{Env, Format, Yaml},
     Figment,
@@ -7,10 +8,23 @@ use std::env;
 
 const CONFIG_FILE: &str = "CONFIG_FILE";
 
+/// The main configuration hosting the application specific [Config] and the [telemetry::Config].
 #[derive(Debug, Clone, Deserialize)]
-pub struct Config {}
+pub struct MainConfig {
+    #[serde(flatten)]
+    pub config: Config,
 
-/// Extension methods for [Config].
+    #[serde(rename = "telemetry")]
+    pub telemetry_config: telemetry::Config,
+}
+
+/// The application sepcific configuration.
+#[derive(Debug, Clone, Deserialize)]
+pub struct Config {
+    // Application specific configuration settings here.
+}
+
+/// Extension methods for "configuration structs" which can be deserialized.
 pub trait ConfigExt
 where
     Self: for<'de> Deserialize<'de>,
@@ -32,25 +46,34 @@ where
     }
 }
 
-impl ConfigExt for Config {}
+impl<T> ConfigExt for T where T: for<'de> Deserialize<'de> {}
 
 #[cfg(test)]
 mod tests {
-    use crate::config::{ConfigExt, CONFIG_FILE};
+    use crate::{
+        config::{ConfigExt, CONFIG_FILE},
+        telemetry,
+    };
     use assert_matches::assert_matches;
     use serde::Deserialize;
     use std::env;
 
     #[test]
     fn test_load() {
-        env::set_var("APP__FOO__BAR", "bar");
+        env::set_var("APP__FOO", "foo");
 
         let config = Config::load();
         assert_matches!(
             config,
             Ok(Config {
-                foo: Foo { bar }
-            }) if bar == "bar"
+                foo,
+                telemetry_config: telemetry::Config {
+                    tracing_config: telemetry::TracingConfig {
+                        enabled,
+                        ..
+                    }
+                },
+            }) if foo == "foo" && !enabled
         );
 
         env::set_var(CONFIG_FILE, "nonexistent.yaml");
@@ -60,13 +83,9 @@ mod tests {
 
     #[derive(Debug, Deserialize)]
     struct Config {
-        foo: Foo,
-    }
+        foo: String,
 
-    impl ConfigExt for Config {}
-
-    #[derive(Debug, Deserialize)]
-    struct Foo {
-        bar: String,
+        #[serde(rename = "telemetry")]
+        telemetry_config: telemetry::Config,
     }
 }

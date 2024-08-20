@@ -1,24 +1,29 @@
 [package]
-name          = "{{project-name}}"
+name          = "{{ project-name }}"
 version       = "0.0.1"
 edition       = "2021"
-description   = "{{project-name}}"
-authors       = [ "{{authors}}" ]
+description   = "{{ project-name }}"
+authors       = [ "{{ authors }}" ]
 license-file  = "LICENSE"
 readme        = "README.md"
-homepage      = "https://github.com/{{github_id}}/{{project-name}}"
-repository    = "https://github.com/{{github_id}}/{{project-name}}"
-documentation = "https://github.com/{{github_id}}/{{project-name}}"
+homepage      = "https://github.com/{{ github_id }}/{{ project-name }}"
+repository    = "https://github.com/{{ github_id }}/{{ project-name }}"
+documentation = "https://github.com/{{ github_id }}/{{ project-name }}"
 
 [dependencies]
-anyhow             = { version = "1.0" }
-figment            = { version = "0.10", features = [ "env", "yaml" ] }
-serde              = { version = "1.0", features = [ "derive" ] }
-serde_json         = { version = "1.0" }
-time               = { version = "0.3", features = [ "formatting" ] }
-tokio              = { version = "1", features = [ "macros", "rt-multi-thread" ] }
-tracing            = { version = "0.1" }
-tracing-subscriber = { version = "0.3", features = [ "env-filter", "json" ] }
+anyhow                = { version = "1.0" }
+figment               = { version = "0.10", features = [ "env", "yaml" ] }
+opentelemetry         = { version = "0.24" }
+opentelemetry_sdk     = { version = "0.24", features = [ "rt-tokio" ] }
+opentelemetry-otlp    = { version = "0.17", default-features = false, features = [ "grpc-tonic", "trace" ] }
+serde                 = { version = "1.0", features = [ "derive" ] }
+serde_json            = { version = "1.0" }
+thiserror             = { version = "1.0" }
+time                  = { version = "0.3", features = [ "formatting" ] }
+tokio                 = { version = "1", features = [ "macros", "rt-multi-thread" ] }
+tracing               = { version = "0.1" }
+tracing-opentelemetry = { version = "0.25" }
+tracing-subscriber    = { version = "0.3", features = [ "env-filter", "json" ] }
 
 [dev-dependencies]
 assert_matches = { version = "1.5" }

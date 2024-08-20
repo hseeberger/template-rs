@@ -24,6 +24,6 @@ doc toolchain="+nightly":
 
 all: check fmt lint test doc
 
-run port="8080":
-	RUST_LOG={{crate_name}}=debug,info \
-		cargo run -p {{project-name}}
+run:
+	RUST_LOG={{ crate_name }}=debug,otel=off,info \
+		cargo run -p {{ project-name }}
