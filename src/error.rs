@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use serde_json::json;
 use std::{error::Error as StdError, fmt::Display};
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
