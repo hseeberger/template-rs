@@ -6,12 +6,12 @@ use crate::{
     config::{Config, ConfigExt, MainConfig},
     error::log_error,
 };
-use anyhow::{Context, Result};
+use anyhow::Context;
 use std::panic;
 use tracing::{error, info};
 
 /// The entry point into the application.
-pub async fn main() -> Result<()> {
+pub async fn main() -> anyhow::Result<()> {
     // Load configuration first, because needed for tracing initialization.
     let MainConfig {
         config,
@@ -36,7 +36,7 @@ pub async fn main() -> Result<()> {
     })
 }
 
-async fn run(config: Config) -> Result<()> {
+async fn run(config: Config) -> anyhow::Result<()> {
     info!(?config, "starting");
 
     // Application code here ...

@@ -17,8 +17,12 @@ pub struct Config {
 #[derive(Debug, Clone, Deserialize)]
 pub struct TracingConfig {
     pub enabled: bool,
-    pub service_name: String,
+
+    #[serde(default = "otlp_exporter_endpoint_default")]
     pub otlp_exporter_endpoint: String,
+
+    #[serde(default)]
+    pub service_name: Option<String>,
 }
 
 /// Error possibly returned by [init].
@@ -63,18 +67,23 @@ where
         .with_endpoint(config.otlp_exporter_endpoint)
         .build()?;
 
-    let resource = Resource::builder()
-        .with_service_name(config.service_name.clone())
-        .build();
+    let mut resource = Resource::builder();
+    if let Some(service_name) = config.service_name {
+        resource = resource.with_service_name(service_name);
+    }
 
     let provider = SdkTracerProvider::builder()
-        .with_resource(resource)
+        .with_resource(resource.build())
         .with_batch_exporter(exporter)
         .build();
 
     let tracer = provider.tracer("config.service_name");
 
     Ok(tracing_opentelemetry::layer().with_tracer(tracer))
+}
+
+fn otlp_exporter_endpoint_default() -> String {
+    "http://localhost:4317".to_string()
 }
 
 #[cfg(test)]
@@ -85,8 +94,8 @@ mod tests {
     async fn test_init() {
         let tracing_config = TracingConfig {
             enabled: true,
-            service_name: "test".to_string(),
             otlp_exporter_endpoint: "http://localhost:4317".to_string(),
+            service_name: None,
         };
         let config = Config { tracing_config };
         let result = telemetry::init(config);
@@ -94,8 +103,8 @@ mod tests {
 
         let tracing_config = TracingConfig {
             enabled: false,
-            service_name: "test".to_string(),
             otlp_exporter_endpoint: "http://localhost:4317".to_string(),
+            service_name: None,
         };
         let config = Config { tracing_config };
         let result = telemetry::init(config);
