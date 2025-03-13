@@ -20,7 +20,7 @@ pub async fn main() -> anyhow::Result<()> {
         .context("load configuration")
         .inspect_err(log_error)?;
 
-    // Initialize tracing.
+    // Initialize telemetry.
     telemetry::init(telemetry_config).inspect_err(log_error)?;
 
     // Replace the default panic hook with one that uses structured logging at ERROR level.
