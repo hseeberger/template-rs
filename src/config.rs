@@ -60,7 +60,9 @@ mod tests {
 
     #[test]
     fn test_load() {
-        env::set_var("APP__FOO", "foo");
+        unsafe {
+            env::set_var("APP__FOO", "foo");
+        }
 
         let config = Config::load();
         assert_matches!(
@@ -76,7 +78,9 @@ mod tests {
             }) if foo == "foo" && !enabled
         );
 
-        env::set_var(CONFIG_FILE, "nonexistent.yaml");
+        unsafe {
+            env::set_var(CONFIG_FILE, "nonexistent.yaml");
+        }
         let config = Config::load();
         assert!(config.is_err());
     }
