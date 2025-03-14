@@ -12,7 +12,7 @@ use tracing::{error, info};
 
 /// The entry point into the application.
 pub async fn main() -> anyhow::Result<()> {
-    // Load configuration first, because needed for tracing initialization.
+    // Load configuration first, because needed for telemetry initialization.
     let MainConfig {
         config,
         telemetry_config,
