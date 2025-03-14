@@ -1,8 +1,7 @@
 set shell := ["bash", "-uc"]
-rust_version := `grep channel rust-toolchain.toml | sed -r 's/channel = "(.*)"/\1/'`
 
 check:
-	cargo check
+	cargo check --tests
 
 fmt toolchain="+nightly":
 	cargo {{ "{{toolchain}}" }} fmt
