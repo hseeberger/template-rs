@@ -24,5 +24,5 @@ doc toolchain="+nightly":
 all: check fmt lint test doc
 
 run:
-	RUST_LOG={{ crate_name }}=debug,otel=off,info \
+	RUST_LOG={{ crate_name }}=debug,info \
 		cargo run -p {{ project-name }}
