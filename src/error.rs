@@ -1,8 +1,6 @@
 #![allow(dead_code)]
 
-use serde_json::json;
-use std::{error::Error as StdError, fmt::Display};
-use time::{format_description::well_known::Rfc3339, OffsetDateTime};
+use std::error::Error as StdError;
 
 /// Alias for `async` and `anyhow` friendly dynamic error
 /// `Box<dyn std::error::Error + Send + Sync + 'static>`.
@@ -35,27 +33,6 @@ where
 }
 
 impl<T> StdErrorExt for T where T: StdError {}
-
-/// Log an error before structured logging, e.g. via Tokio Tracing, has been initialized in a
-/// similar structured way.
-pub fn log_error<T>(error: &T)
-where
-    T: Display + ?Sized,
-{
-    let now = OffsetDateTime::now_utc()
-        .format(&Rfc3339)
-        .expect("now can be Rfc3339 formatted");
-
-    let error = serde_json::to_string(&json!({
-        "timestamp": now,
-        "level": "ERROR",
-        "message": "process exited with ERROR",
-        "error": format!("{error:#}")
-    }));
-
-    // Not using `eprintln!`, because `tracing_subscriber::fmt` (Tokio Tracing) uses stdout.
-    println!("{}", error.unwrap());
-}
 
 #[cfg(test)]
 mod tests {

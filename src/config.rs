@@ -1,27 +1,31 @@
-use crate::telemetry;
+use crate::{infra::api, telemetry};
 use figment::{
-    providers::{Env, Format, Yaml},
     Figment,
+    providers::{Env, Format, Yaml},
 };
 use serde::Deserialize;
 use std::env;
 
 const CONFIG_FILE: &str = "CONFIG_FILE";
 
-/// The main configuration hosting the application specific [Config] and the [telemetry::Config].
+/// The main configuration.
+///
+/// It contains the flattened out application sepcific configuration and the tracing configuration.
 #[derive(Debug, Clone, Deserialize)]
 pub struct MainConfig {
+    /// Application sepcific configuration.
     #[serde(flatten)]
     pub config: Config,
 
-    #[serde(rename = "telemetry")]
-    pub telemetry_config: telemetry::Config,
+    /// Tracing configuration.
+    #[serde(rename = "tracing", default)]
+    pub tracing_config: telemetry::TracingConfig,
 }
 
-/// The application sepcific configuration.
+/// Application sepcific configuration.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
-    // Application specific configuration settings here.
+    pub api: api::Config,
 }
 
 /// Extension methods for "configuration structs" which can be deserialized.
@@ -51,31 +55,23 @@ impl<T> ConfigExt for T where T: for<'de> Deserialize<'de> {}
 #[cfg(test)]
 mod tests {
     use crate::{
-        config::{ConfigExt, CONFIG_FILE},
-        telemetry,
+        config::{CONFIG_FILE, Config, ConfigExt, MainConfig},
+        infra::api,
     };
     use assert_matches::assert_matches;
-    use serde::Deserialize;
     use std::env;
 
     #[test]
     fn test_load() {
         unsafe {
-            env::set_var("APP__FOO", "foo");
+            env::set_var("APP__API__PORT", "4242");
         }
 
-        let config = Config::load();
+        let config = MainConfig::load();
         assert_matches!(
             config,
-            Ok(Config {
-                foo,
-                telemetry_config: telemetry::Config {
-                    tracing_config: telemetry::TracingConfig {
-                        enabled,
-                        ..
-                    }
-                },
-            }) if foo == "foo" && !enabled
+            Ok(MainConfig { config: Config { api: api::Config { port, .. } }, tracing_config })
+            if port == 4242 && tracing_config.otlp_exporter_endpoint == "http://localhost:4317"
         );
 
         unsafe {
@@ -83,13 +79,5 @@ mod tests {
         }
         let config = Config::load();
         assert!(config.is_err());
-    }
-
-    #[derive(Debug, Deserialize)]
-    struct Config {
-        foo: String,
-
-        #[serde(rename = "telemetry")]
-        telemetry_config: telemetry::Config,
     }
 }
