@@ -11,6 +11,6 @@ services:
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
       - ./target/filestorage:/var/lib/otelcol/file_storage
-      - ./target/log:/var/log
+      - ./target:/var/log
     ports:
       - 4317:4317 # OTLP gRPC receiver

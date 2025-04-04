@@ -18,11 +18,11 @@ test:
 fix:
 	cargo fix --allow-dirty --allow-staged
 
-doc toolchain="+nightly":
-	RUSTDOCFLAGS="-D warnings --cfg docsrs" cargo {{ "{{toolchain}}" }} doc --no-deps
+doc:
+	cargo doc --no-deps
 
 all: check fmt lint test doc
 
 run:
 	RUST_LOG={{ crate_name }}=debug,info \
-		cargo run -p {{ project-name }}
+		cargo run -p {{ project-name }} | tee ./target/a.log

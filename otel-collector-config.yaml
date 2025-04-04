@@ -9,7 +9,7 @@ extensions:
 receivers:
   filelog:
     include:
-      - /var/log/*
+      - /var/log/*.log
     start_at: end
     storage: file_storage/filelogreceiver
 
