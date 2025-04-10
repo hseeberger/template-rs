@@ -18,7 +18,7 @@ fastrace-axum          = { version = "0.1" }
 fastrace-opentelemetry = { version = "0.10" }
 figment                = { version = "0.10", features = [ "env", "yaml" ] }
 log                    = { version = "0.4", features = [ "kv_std" ] }
-logforth               = { version = "0.23", features = [ "fastrace", "json", "opentelemetry" ] }
+logforth               = { version = "0.23", features = [ "fastrace", "json" ] }
 opentelemetry          = { version = "0.29" }
 opentelemetry_sdk      = { version = "0.29" }
 opentelemetry-otlp     = { version = "0.29", features = [ "grpc-tonic" ] }
