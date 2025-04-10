@@ -1,10 +1,9 @@
 mod config;
-mod error;
 mod infra;
 mod telemetry;
 
 use crate::{
-    config::{ConfigExt, MainConfig},
+    config::{Config, ConfigExt, MainConfig},
     infra::api,
 };
 use anyhow::Context;
@@ -40,5 +39,9 @@ async fn run() -> anyhow::Result<()> {
 
     info!(config:?; "starting");
 
-    api::serve(config.api).await
+    let Config {
+        infra_config: infra::Config { api_config },
+    } = config;
+
+    api::serve(api_config).await
 }

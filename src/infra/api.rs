@@ -1,21 +1,23 @@
 use anyhow::Context;
-use axum::{Router, response::IntoResponse, routing::get};
+use axum::{response::IntoResponse, routing::get, Router};
 use fastrace::trace;
 use fastrace_axum::FastraceLayer;
 use serde::Deserialize;
 use std::net::IpAddr;
 use tokio::{
     net::TcpListener,
-    signal::unix::{SignalKind, signal},
+    signal::unix::{signal, SignalKind},
 };
 use tower::ServiceBuilder;
 
+/// API configuration.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
     pub address: IpAddr,
     pub port: u16,
 }
 
+/// Serve the API, supporting trace context propagation.
 pub async fn serve(config: Config) -> anyhow::Result<()> {
     let Config { address, port } = config;
 
@@ -30,7 +32,7 @@ pub async fn serve(config: Config) -> anyhow::Result<()> {
         .context("run server")
 }
 
-pub fn app() -> Router {
+fn app() -> Router {
     Router::new().route("/", get(ready))
 }
 

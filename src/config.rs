@@ -1,7 +1,7 @@
-use crate::{infra::api, telemetry};
+use crate::{infra, telemetry};
 use figment::{
-    Figment,
     providers::{Env, Format, Yaml},
+    Figment,
 };
 use serde::Deserialize;
 use std::env;
@@ -25,7 +25,9 @@ pub struct MainConfig {
 /// Application sepcific configuration.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
-    pub api: api::Config,
+    /// Infra configuration.
+    #[serde(rename = "infra")]
+    pub infra_config: infra::Config,
 }
 
 /// Extension methods for "configuration structs" which can be deserialized.
@@ -55,8 +57,8 @@ impl<T> ConfigExt for T where T: for<'de> Deserialize<'de> {}
 #[cfg(test)]
 mod tests {
     use crate::{
-        config::{CONFIG_FILE, Config, ConfigExt, MainConfig},
-        infra::api,
+        config::{Config, ConfigExt, MainConfig, CONFIG_FILE},
+        infra::{self, api},
     };
     use assert_matches::assert_matches;
     use std::env;
@@ -64,13 +66,20 @@ mod tests {
     #[test]
     fn test_load() {
         unsafe {
-            env::set_var("APP__API__PORT", "4242");
+            env::set_var("APP__INFRA__API__PORT", "4242");
         }
 
         let config = MainConfig::load();
         assert_matches!(
             config,
-            Ok(MainConfig { config: Config { api: api::Config { port, .. } }, tracing_config })
+            Ok(MainConfig {
+                config: Config {
+                    infra_config: infra::Config {
+                        api_config: api::Config { port, .. }
+                    }
+                },
+                tracing_config
+            })
             if port == 4242 && tracing_config.otlp_exporter_endpoint == "http://localhost:4317"
         );
 
