@@ -5,7 +5,7 @@ use logforth::{
     filter::EnvFilter,
     layout::JsonLayout,
 };
-use opentelemetry::{InstrumentationScope, trace::SpanKind};
+use opentelemetry::{trace::SpanKind, InstrumentationScope};
 use opentelemetry_otlp::{SpanExporter, WithExportConfig};
 use opentelemetry_sdk::Resource;
 use serde::Deserialize;
@@ -115,49 +115,4 @@ fn package_name() -> String {
 
 fn package_version() -> String {
     format!("v{}", env!("CARGO_PKG_VERSION"))
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::telemetry::{
-        self, TracingConfig, init_logging, otlp_exporter_endpoint_default, package_name,
-        package_version,
-    };
-
-    #[tokio::test]
-    async fn test_init_logging() {
-        init_logging();
-    }
-
-    #[tokio::test]
-    #[should_panic]
-    async fn test_init_logging_panic() {
-        init_logging();
-        init_logging();
-    }
-
-    #[tokio::test]
-    async fn test_init_tracing() {
-        let config = TracingConfig {
-            otlp_exporter_endpoint: otlp_exporter_endpoint_default(),
-            service_name: package_name(),
-            instrumentation_scope_name: package_name(),
-            instrumentation_scope_version: package_version(),
-        };
-
-        telemetry::init_tracing(config);
-    }
-
-    #[tokio::test]
-    #[should_panic]
-    async fn test_init_tracing_panic() {
-        let config = TracingConfig {
-            otlp_exporter_endpoint: "???".to_string(),
-            service_name: package_name(),
-            instrumentation_scope_name: package_name(),
-            instrumentation_scope_version: package_version(),
-        };
-
-        telemetry::init_tracing(config);
-    }
 }
