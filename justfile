@@ -25,4 +25,4 @@ all: check fmt lint test doc
 
 run:
 	RUST_LOG={{ crate_name }}=debug,info \
-		cargo run -p {{ project-name }} | tee ./target/a.log
+		cargo run -p {{ project-name }} | tee ./target/{{ crate_name }}.log
