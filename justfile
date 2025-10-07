@@ -9,14 +9,17 @@ fmt toolchain="+nightly":
 fmt-check toolchain="+nightly":
 	cargo {{ "{{toolchain}}" }} fmt --check
 
+fix:
+	cargo fix --tests --allow-dirty --allow-staged
+
 lint:
-	cargo clippy --no-deps --tests -- -D warnings
+	cargo clippy --tests --no-deps -- -D warnings
+
+lint-fix:
+	cargo clippy --tests --no-deps --allow-dirty --allow-staged --fix
 
 test:
 	cargo test
-
-fix:
-	cargo fix --allow-dirty --allow-staged
 
 doc:
 	cargo doc --no-deps
