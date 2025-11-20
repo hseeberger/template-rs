@@ -16,6 +16,10 @@ use std::borrow::Cow;
 /// All fields have sensible deserialization defaults.
 #[derive(Debug, Clone, Deserialize)]
 pub struct TracingConfig {
+    /// Defaults to false.
+    #[serde(default)]
+    pub enabled: bool,
+
     /// Defaults to OTLP gRPC: "http://localhost:4317".
     #[serde(default = "otlp_exporter_endpoint_default")]
     pub otlp_exporter_endpoint: String,
@@ -36,6 +40,7 @@ pub struct TracingConfig {
 impl Default for TracingConfig {
     fn default() -> Self {
         Self {
+            enabled: Default::default(),
             otlp_exporter_endpoint: otlp_exporter_endpoint_default(),
             service_name: package_name(),
             instrumentation_scope_name: package_name(),
@@ -76,29 +81,32 @@ pub fn init_logging() {
 ///
 /// Panics if the OTLP exporter cannot be built.
 pub fn init_tracing(config: TracingConfig) {
-    let TracingConfig {
-        otlp_exporter_endpoint,
-        service_name,
-        instrumentation_scope_name,
-        instrumentation_scope_version,
-    } = config;
+    if config.enabled {
+        let TracingConfig {
+            otlp_exporter_endpoint,
+            service_name,
+            instrumentation_scope_name,
+            instrumentation_scope_version,
+            ..
+        } = config;
 
-    let exporter = SpanExporter::builder()
-        .with_tonic()
-        .with_endpoint(otlp_exporter_endpoint)
-        .build()
-        .expect("OTLP exporter can be built");
+        let exporter = SpanExporter::builder()
+            .with_tonic()
+            .with_endpoint(otlp_exporter_endpoint)
+            .build()
+            .expect("OTLP exporter can be built");
 
-    let resource = Resource::builder().with_service_name(service_name).build();
+        let resource = Resource::builder().with_service_name(service_name).build();
 
-    let instrumentation_scope = InstrumentationScope::builder(instrumentation_scope_name)
-        .with_version(instrumentation_scope_version)
-        .build();
+        let instrumentation_scope = InstrumentationScope::builder(instrumentation_scope_name)
+            .with_version(instrumentation_scope_version)
+            .build();
 
-    let reporter =
-        OpenTelemetryReporter::new(exporter, Cow::Owned(resource), instrumentation_scope);
+        let reporter =
+            OpenTelemetryReporter::new(exporter, Cow::Owned(resource), instrumentation_scope);
 
-    fastrace::set_reporter(reporter, fastrace::collector::Config::default());
+        fastrace::set_reporter(reporter, fastrace::collector::Config::default());
+    }
 }
 
 fn otlp_exporter_endpoint_default() -> String {
