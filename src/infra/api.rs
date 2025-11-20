@@ -1,5 +1,5 @@
 use anyhow::Context;
-use axum::{response::IntoResponse, routing::get, Router};
+use axum::{http::StatusCode, routing::get, Router};
 use fastrace::trace;
 use fastrace_axum::FastraceLayer;
 use serde::Deserialize;
@@ -37,8 +37,8 @@ fn app() -> Router {
 }
 
 #[trace]
-async fn ready() -> impl IntoResponse {
-    "ready"
+async fn ready() -> StatusCode {
+    StatusCode::OK
 }
 
 async fn shutdown_signal() {
