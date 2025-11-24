@@ -17,7 +17,7 @@ pub struct Config {
     pub port: u16,
 }
 
-/// Serve the API, supporting trace context propagation.
+/// Serve the API.
 pub async fn serve(config: Config) -> anyhow::Result<()> {
     let Config { address, port } = config;
 
