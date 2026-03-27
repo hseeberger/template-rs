@@ -21,7 +21,7 @@ pub struct Config {
 pub async fn serve(config: Config) -> anyhow::Result<()> {
     let Config { address, port } = config;
 
-    let app = app().layer(ServiceBuilder::new().layer(FastraceLayer));
+    let app = app().layer(ServiceBuilder::new().layer(FastraceLayer::default()));
 
     let listener = TcpListener::bind((address, port))
         .await
