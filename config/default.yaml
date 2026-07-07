@@ -1,0 +1,8 @@
+# Configuration. Override any value via CFG__<UPPER_SNAKE_CASE> environment variables
+# (nested keys are separated by `__`).
+{%- if tracing %}
+
+tracing:
+  enabled: true
+  otlp_exporter_endpoint: "http://localhost:4317"
+{%- endif %}

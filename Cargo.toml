@@ -12,21 +12,21 @@ publish       = false
 
 [dependencies]
 anyhow                 = { version = "1.0" }
-axum                   = { version = "0.8", features = [ "http2", "json" ] }
+{%- if tracing %}
 fastrace               = { version = "0.7", features = [ "enable" ] }
-fastrace-axum          = { version = "0.2" }
-fastrace-opentelemetry = { version = "0.16" }
-figment                = { version = "0.10", features = [ "env", "yaml" ] }
+fastrace-opentelemetry = { version = "0.18" }
+{%- endif %}
+{%- if config %}
+configured             = { version = "0.9" }
+{%- endif %}
 log                    = { version = "0.4", features = [ "kv_std" ] }
-logforth               = { version = "0.29", features = [ "append-fastrace", "diagnostic-fastrace", "starter-log" ] }
-opentelemetry          = { version = "0.31" }
-opentelemetry_sdk      = { version = "0.31" }
-opentelemetry-otlp     = { version = "0.31", features = [ "grpc-tonic" ] }
+logforth               = { version = "0.30", features = [ {% if tracing %}"append-fastrace", "diagnostic-fastrace", {% endif %}"starter-log" ] }
+{%- if tracing %}
+opentelemetry          = { version = "0.32" }
+opentelemetry_sdk      = { version = "0.32" }
+opentelemetry-otlp     = { version = "0.32", features = [ "grpc-tonic" ] }
+{%- endif %}
+{%- if config or tracing %}
 serde                  = { version = "1.0", features = [ "derive" ] }
-serde_json             = { version = "1.0" }
-thiserror              = { version = "2.0" }
-tokio                  = { version = "1", features = [ "macros", "rt-multi-thread", "signal" ] }
-tower                  = { version = "0.5" }
-
-[dev-dependencies]
-assert_matches = { version = "1.5" }
+{%- endif %}
+tokio                  = { version = "1", features = [ "macros", "rt-multi-thread" ] }

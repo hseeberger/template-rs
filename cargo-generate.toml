@@ -3,3 +3,11 @@ exclude = [".github/workflows/**"]
 
 [placeholders]
 github_id = { prompt = "GitHub ID", type = "string", default = "hseeberger" }
+tracing   = { prompt = "Include OpenTelemetry tracing?", type = "bool", default = false }
+config    = { prompt = "Include configuration?", type = "bool", default = false }
+
+[conditional.'config == false']
+ignore = ["config"]
+
+[conditional.'tracing == false']
+ignore = ["docker-compose.yaml", "otel-collector-config.yaml"]
