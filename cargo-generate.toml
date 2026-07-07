@@ -1,2 +1,5 @@
+[template]
+exclude = [".github/workflows/**"]
+
 [placeholders]
 github_id = { prompt = "GitHub ID", type = "string", default = "hseeberger" }

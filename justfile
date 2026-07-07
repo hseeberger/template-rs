@@ -3,31 +3,32 @@ set shell := ["bash", "-uc"]
 nightly := `rustc --version | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | sed 's/^/nightly-/'`
 
 check:
-	cargo check --tests
+    cargo check --tests
 
 fix:
-    cargo fix --allow-dirty --allow-staged --tests
+    cargo fix --tests --allow-dirty --allow-staged
 
 fmt:
-    cargo +{{nightly}} fmt
+    cargo +{% raw %}{{ nightly }}{% endraw %} fmt
+    RUST_LOG=error taplo fmt
 
 fmt-check:
-    cargo +{{nightly}} fmt --check
+    cargo +{% raw %}{{ nightly }}{% endraw %} fmt --check
 
 lint:
-	cargo clippy --no-deps --tests -- -D warnings
+    cargo clippy --tests --no-deps -- -D warnings
 
 lint-fix:
-    cargo clippy --no-deps --tests --fix --allow-dirty --allow-staged
+    cargo clippy --tests --no-deps --fix --allow-dirty --allow-staged
 
 test:
-	cargo test
+    cargo test
 
 doc:
-	cargo doc --no-deps
+    cargo doc --no-deps
 
 all: check fmt lint test doc
 
 run:
-	RUST_LOG={{ crate_name }}=debug,info \
-		cargo run -p {{ project-name }} | tee ./target/{{ crate_name }}.log
+    RUST_LOG={{ crate_name }}=debug,info \
+        cargo run -p {{ project-name }} | tee ./target/{{ crate_name }}.log

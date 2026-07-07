@@ -1,7 +1,7 @@
 use crate::{infra, telemetry};
 use figment::{
-    providers::{Env, Format, Yaml},
     Figment,
+    providers::{Env, Format, Yaml},
 };
 use serde::Deserialize;
 use std::env;
@@ -57,7 +57,7 @@ impl<T> ConfigExt for T where T: for<'de> Deserialize<'de> {}
 #[cfg(test)]
 mod tests {
     use crate::{
-        config::{Config, ConfigExt, MainConfig, CONFIG_FILE},
+        config::{CONFIG_FILE, Config, ConfigExt, MainConfig},
         infra::{self, api},
     };
     use assert_matches::assert_matches;

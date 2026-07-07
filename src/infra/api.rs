@@ -1,12 +1,12 @@
 use anyhow::Context;
-use axum::{http::StatusCode, routing::get, Router};
+use axum::{Router, http::StatusCode, routing::get};
 use fastrace::trace;
 use fastrace_axum::FastraceLayer;
 use serde::Deserialize;
 use std::net::IpAddr;
 use tokio::{
     net::TcpListener,
-    signal::unix::{signal, SignalKind},
+    signal::unix::{SignalKind, signal},
 };
 use tower::ServiceBuilder;
 
