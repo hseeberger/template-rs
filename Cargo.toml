@@ -11,22 +11,22 @@ documentation = "https://github.com/{{ github_id }}/{{ project-name }}"
 publish       = false
 
 [dependencies]
-anyhow                 = { version = "1.0" }
-{%- if tracing %}
-fastrace               = { version = "0.7", features = [ "enable" ] }
-fastrace-opentelemetry = { version = "0.18" }
-{%- endif %}
+anyhow                = { version = "1.0" }
 {%- if config %}
-configured             = { version = "0.9" }
+configured            = { version = "0.9" }
 {%- endif %}
-log                    = { version = "0.4", features = [ "kv_std" ] }
-logforth               = { version = "0.30", features = [ {% if tracing %}"append-fastrace", "diagnostic-fastrace", {% endif %}"starter-log" ] }
-{%- if tracing %}
-opentelemetry          = { version = "0.32" }
-opentelemetry_sdk      = { version = "0.32" }
-opentelemetry-otlp     = { version = "0.32", features = [ "grpc-tonic" ] }
+{%- if otel %}
+opentelemetry         = { version = "0.32" }
+opentelemetry_sdk     = { version = "0.32" }
+opentelemetry-otlp    = { version = "0.32", features = [ "grpc-tonic" ] }
 {%- endif %}
-{%- if config or tracing %}
-serde                  = { version = "1.0", features = [ "derive" ] }
+{%- if config or otel %}
+serde                 = { version = "1.0", features = [ "derive" ] }
+serde_json            = { version = "1.0" }
 {%- endif %}
-tokio                  = { version = "1", features = [ "macros", "rt-multi-thread" ] }
+tokio                 = { version = "1", features = [ "macros", "rt-multi-thread" ] }
+tracing               = { version = "0.1" }
+{%- if otel %}
+tracing-opentelemetry = { version = "0.33" }
+{%- endif %}
+tracing-subscriber    = { version = "0.3", features = [ "env-filter", "fmt", "json" ] }

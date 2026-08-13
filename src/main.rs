@@ -1,71 +1,85 @@
-{%- if config and tracing -%}
+{%- if config and otel -%}
 use anyhow::Context;
 use configured::{Case, Configured};
-use fastrace_opentelemetry::OpenTelemetryReporter;
-use log::{error, info};
-use logforth::{
-    append::{FastraceEvent, Stdout},
-    diagnostic::FastraceDiagnostic,
-    filter::rustlog::RustLogFilterBuilder,
-    layout::JsonLayout,
-};
-use opentelemetry::InstrumentationScope;
+use opentelemetry::{InstrumentationScope, global, trace::TracerProvider as _};
 use opentelemetry_otlp::{SpanExporter, WithExportConfig};
-use opentelemetry_sdk::Resource;
+use opentelemetry_sdk::{Resource, propagation::TraceContextPropagator, trace::SdkTracerProvider};
 use serde::Deserialize;
-use std::{borrow::Cow, panic};
-use tokio::runtime::Handle;
+use serde_json::json;
+use std::panic;
+use tracing::{error, info};
+use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 {%- elsif config -%}
 use anyhow::Context;
 use configured::{Case, Configured};
-use log::{error, info};
-use logforth::{append::Stdout, filter::rustlog::RustLogFilterBuilder, layout::JsonLayout};
 use serde::Deserialize;
+use serde_json::json;
 use std::panic;
-{%- elsif tracing -%}
+use tracing::{error, info};
+use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
+{%- elsif otel -%}
 use anyhow::Context;
-use fastrace_opentelemetry::OpenTelemetryReporter;
-use log::{error, info};
-use logforth::{
-    append::{FastraceEvent, Stdout},
-    diagnostic::FastraceDiagnostic,
-    filter::rustlog::RustLogFilterBuilder,
-    layout::JsonLayout,
-};
-use opentelemetry::InstrumentationScope;
+use opentelemetry::{InstrumentationScope, global, trace::TracerProvider as _};
 use opentelemetry_otlp::{SpanExporter, WithExportConfig};
-use opentelemetry_sdk::Resource;
+use opentelemetry_sdk::{Resource, propagation::TraceContextPropagator, trace::SdkTracerProvider};
 use serde::Deserialize;
-use std::{borrow::Cow, panic};
-use tokio::runtime::Handle;
-{%- else -%}
-use log::{error, info};
-use logforth::{append::Stdout, filter::rustlog::RustLogFilterBuilder, layout::JsonLayout};
+use serde_json::json;
 use std::panic;
+use tracing::{error, info};
+use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
+{%- else -%}
+use std::panic;
+use tracing::{error, info};
+use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 {%- endif %}
 
 #[tokio::main]
 async fn main() {
-    init_logging();
+{%- if config %}
+    let Ok(config) = Config::load(Case::Snake)
+        .context("load configuration")
+        .inspect_err(log_error)
+    else {
+        return;
+    };
+{% endif %}
+{%- if otel %}
+{%- if config %}
+    let Ok(provider) = init_tracing(config.tracing.clone()).inspect_err(log_error) else {
+{%- else %}
+    let Ok(provider) = init_tracing(TracingConfig::default()).inspect_err(log_error) else {
+{%- endif %}
+        return;
+    };
+{%- else %}
+    init_tracing();
+{%- endif %}
 
-    // Replace the default panic hook with one that uses structured logging at ERROR level.
-    panic::set_hook(Box::new(|panic| error!(panic:%; "process panicked")));
+    panic::set_hook(Box::new(|panic| error!(%panic, "process panicked")));
 
-    // Run and log any error.
+{%- if config %}
+
+    if let Err(error) = run(config).await {
+{%- else %}
+
     if let Err(error) = run().await {
+{%- endif %}
         let backtrace = error.backtrace();
         let error = format!("{error:#}");
-        error!(error, backtrace:%; "process exited with ERROR")
+        error!(error, %backtrace, "process exited with ERROR")
     }
-{%- if tracing %}
+{%- if otel %}
 
-    // Drain the batching trace reporter so the tail of spans is exported before exit.
-    fastrace::flush();
+    if let Some(provider) = provider
+        && let Err(error) = provider.shutdown()
+    {
+        error!(%error, "cannot shut down tracer provider")
+    }
 {%- endif %}
 }
 {%- if config %}
 
-{%- if tracing %}
+{%- if otel %}
 #[derive(Debug, Deserialize)]
 struct Config {
     #[serde(rename = "tracing", default)]
@@ -76,7 +90,7 @@ struct Config {
 struct Config {}
 {%- endif %}
 {%- endif %}
-{%- if tracing %}
+{%- if otel %}
 
 #[derive(Debug, Clone, Deserialize)]
 struct TracingConfig {
@@ -108,75 +122,88 @@ impl Default for TracingConfig {
     }
 }
 {%- endif %}
+{%- if config or otel %}
 
-async fn run() -> anyhow::Result<()> {
-{%- if config %}
-    let config = Config::load(Case::Snake).context("load configuration")?;
-    info!(config:?; "starting");
-{%- else %}
-    info!("starting");
-{%- endif %}
-{%- if tracing %}
-{%- if config %}
-    init_tracing(config.tracing).context("initialize tracing")?;
-{%- else %}
-    init_tracing(TracingConfig::default()).context("initialize tracing")?;
-{%- endif %}
-{%- endif %}
-
-    Ok(())
+fn log_error(error: &anyhow::Error) {
+    let error = json!({
+        "level": "ERROR",
+        "message": "process exited with ERROR",
+        "error": format!("{error:#}"),
+    });
+    println!("{error}");
 }
-
-fn init_logging() {
-    logforth::starter_log::builder()
-        .dispatch(|dispatch| {
-            dispatch
-                .filter(RustLogFilterBuilder::from_default_env().build())
-{%- if tracing %}
-                .diagnostic(FastraceDiagnostic::default())
 {%- endif %}
-                .append(Stdout::default().with_layout(JsonLayout::default()))
-{%- if tracing %}
-                .append(FastraceEvent::default())
-{%- endif %}
-        })
-        .apply();
-}
-{%- if tracing %}
+{%- if otel %}
 
-fn init_tracing(config: TracingConfig) -> anyhow::Result<()> {
-    if config.enabled {
-        let TracingConfig {
-            otlp_exporter_endpoint,
-            service_name,
-            instrumentation_scope_name,
-            instrumentation_scope_version,
-            ..
-        } = config;
+fn init_tracing(config: TracingConfig) -> anyhow::Result<Option<SdkTracerProvider>> {
+    let TracingConfig {
+        enabled,
+        otlp_exporter_endpoint,
+        service_name,
+        instrumentation_scope_name,
+        instrumentation_scope_version,
+    } = config;
 
-        let exporter = SpanExporter::builder()
-            .with_tonic()
-            .with_endpoint(otlp_exporter_endpoint)
-            .build()
-            .context("build OTLP exporter")?;
+    let provider = enabled
+        .then(|| tracer_provider(otlp_exporter_endpoint, service_name))
+        .transpose()?;
 
-        let resource = Resource::builder().with_service_name(service_name).build();
-
-        let instrumentation_scope = InstrumentationScope::builder(instrumentation_scope_name)
+    let otlp_layer = provider.as_ref().map(|provider| {
+        let scope = InstrumentationScope::builder(instrumentation_scope_name)
             .with_version(instrumentation_scope_version)
             .build();
+        tracing_opentelemetry::layer().with_tracer(provider.tracer_with_scope(scope))
+    });
 
-        // The OTLP/tonic exporter is async; fastrace's default `block_on` cannot drive it, so hand
-        // it this runtime's handle. Requires `init_tracing` to be called from within the runtime.
-        let handle = Handle::current();
-        let reporter =
-            OpenTelemetryReporter::new(exporter, Cow::Owned(resource), instrumentation_scope)
-                .with_block_on(move |future| handle.block_on(future));
+    tracing_subscriber::registry()
+        .with(EnvFilter::from_default_env())
+        .with(tracing_subscriber::fmt::layer().json().flatten_event(true))
+        .with(otlp_layer)
+        .try_init()
+        .context("initialize tracing subscriber")?;
 
-        fastrace::set_reporter(reporter, fastrace::collector::Config::default());
-    }
+    Ok(provider)
+}
+{%- else %}
+
+fn init_tracing() {
+    tracing_subscriber::registry()
+        .with(EnvFilter::from_default_env())
+        .with(tracing_subscriber::fmt::layer().json().flatten_event(true))
+        .init();
+}
+{%- endif %}
+
+{% if config -%}
+async fn run(config: Config) -> anyhow::Result<()> {
+    info!(?config, "starting");
+{%- else -%}
+async fn run() -> anyhow::Result<()> {
+    info!("starting");
+{%- endif %}
 
     Ok(())
+}
+{%- if otel %}
+
+fn tracer_provider(
+    otlp_exporter_endpoint: String,
+    service_name: String,
+) -> anyhow::Result<SdkTracerProvider> {
+    let exporter = SpanExporter::builder()
+        .with_tonic()
+        .with_endpoint(otlp_exporter_endpoint)
+        .build()
+        .context("build OTLP exporter")?;
+
+    let resource = Resource::builder().with_service_name(service_name).build();
+
+    global::set_text_map_propagator(TraceContextPropagator::new());
+
+    Ok(SdkTracerProvider::builder()
+        .with_resource(resource)
+        .with_batch_exporter(exporter)
+        .build())
 }
 
 fn otlp_exporter_endpoint_default() -> String {
