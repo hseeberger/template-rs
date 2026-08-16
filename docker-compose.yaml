@@ -1,6 +1,6 @@
 services:
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.157.0
+    image: otel/opentelemetry-collector-contrib:0.158.0
     restart: always
     command: 
       - --config
