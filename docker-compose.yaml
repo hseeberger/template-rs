@@ -1,6 +1,6 @@
 services:
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.159.0
+    image: otel/opentelemetry-collector-contrib:0.160.0
     command:
       - --config
       - /etc/otel-collector-config.yaml
