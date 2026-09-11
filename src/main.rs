@@ -6,7 +6,7 @@ use opentelemetry_otlp::{SpanExporter, WithExportConfig};
 use opentelemetry_sdk::{Resource, propagation::TraceContextPropagator, trace::SdkTracerProvider};
 use serde::Deserialize;
 use serde_json::json;
-use std::panic;
+use std::{panic, process::ExitCode};
 use tracing::{error, info};
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 {%- elsif config -%}
@@ -14,7 +14,7 @@ use anyhow::Context;
 use configured::{Case, Configured};
 use serde::Deserialize;
 use serde_json::json;
-use std::panic;
+use std::{panic, process::ExitCode};
 use tracing::{error, info};
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 {%- elsif otel -%}
@@ -24,23 +24,23 @@ use opentelemetry_otlp::{SpanExporter, WithExportConfig};
 use opentelemetry_sdk::{Resource, propagation::TraceContextPropagator, trace::SdkTracerProvider};
 use serde::Deserialize;
 use serde_json::json;
-use std::panic;
+use std::{panic, process::ExitCode};
 use tracing::{error, info};
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 {%- else -%}
-use std::panic;
+use std::{panic, process::ExitCode};
 use tracing::{error, info};
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 {%- endif %}
 
 #[tokio::main]
-async fn main() {
+async fn main() -> ExitCode {
 {%- if config %}
     let Ok(config) = Config::load(Case::Snake)
         .context("load configuration")
         .inspect_err(log_error)
     else {
-        return;
+        return ExitCode::FAILURE;
     };
 {% endif %}
 {%- if otel %}
@@ -49,7 +49,7 @@ async fn main() {
 {%- else %}
     let Ok(provider) = init_tracing(TracingConfig::default()).inspect_err(log_error) else {
 {%- endif %}
-        return;
+        return ExitCode::FAILURE;
     };
 {%- else %}
     init_tracing();
@@ -57,6 +57,30 @@ async fn main() {
 
     panic::set_hook(Box::new(|panic| error!(%panic, "process panicked")));
 
+{%- if otel %}
+{%- if config %}
+
+    let exit_code = if let Err(error) = run(config).await {
+{%- else %}
+
+    let exit_code = if let Err(error) = run().await {
+{%- endif %}
+        let backtrace = error.backtrace();
+        let error = format!("{error:#}");
+        error!(error, %backtrace, "process exited with ERROR");
+        ExitCode::FAILURE
+    } else {
+        ExitCode::SUCCESS
+    };
+
+    if let Some(provider) = provider
+        && let Err(error) = provider.shutdown()
+    {
+        error!(%error, "cannot shut down tracer provider")
+    }
+
+    exit_code
+{%- else %}
 {%- if config %}
 
     if let Err(error) = run(config).await {
@@ -66,27 +90,22 @@ async fn main() {
 {%- endif %}
         let backtrace = error.backtrace();
         let error = format!("{error:#}");
-        error!(error, %backtrace, "process exited with ERROR")
+        error!(error, %backtrace, "process exited with ERROR");
+        return ExitCode::FAILURE;
     }
-{%- if otel %}
 
-    if let Some(provider) = provider
-        && let Err(error) = provider.shutdown()
-    {
-        error!(%error, "cannot shut down tracer provider")
-    }
+    ExitCode::SUCCESS
 {%- endif %}
 }
 {%- if config %}
 
-{%- if otel %}
 #[derive(Debug, Deserialize)]
+{%- if otel %}
 struct Config {
     #[serde(rename = "tracing", default)]
     tracing: TracingConfig,
 }
 {%- else %}
-#[derive(Debug, Deserialize)]
 struct Config {}
 {%- endif %}
 {%- endif %}
