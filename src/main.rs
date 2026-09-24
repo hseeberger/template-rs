@@ -103,7 +103,7 @@ async fn main() -> ExitCode {
 {%- if otel %}
 struct Config {
     #[serde(rename = "tracing", default)]
-    tracing: TracingConfig,
+    pub tracing: TracingConfig,
 }
 {%- else %}
 struct Config {}
@@ -114,19 +114,19 @@ struct Config {}
 #[derive(Debug, Clone, Deserialize)]
 struct TracingConfig {
     #[serde(default)]
-    enabled: bool,
+    pub enabled: bool,
 
     #[serde(default = "otlp_exporter_endpoint_default")]
-    otlp_exporter_endpoint: String,
+    pub otlp_exporter_endpoint: String,
 
     #[serde(default = "package_name")]
-    service_name: String,
+    pub service_name: String,
 
     #[serde(default = "package_name")]
-    instrumentation_scope_name: String,
+    pub instrumentation_scope_name: String,
 
     #[serde(default = "package_version")]
-    instrumentation_scope_version: String,
+    pub instrumentation_scope_version: String,
 }
 
 impl Default for TracingConfig {
