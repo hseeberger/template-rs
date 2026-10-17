@@ -30,3 +30,9 @@ tracing               = { version = "0.1" }
 tracing-opentelemetry = { version = "0.33" }
 {%- endif %}
 tracing-subscriber    = { version = "0.3", features = [ "env-filter", "fmt", "json" ] }
+
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
