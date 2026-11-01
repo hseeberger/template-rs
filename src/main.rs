@@ -8,7 +8,15 @@ use serde::Deserialize;
 use serde_json::json;
 use std::{panic, process::ExitCode};
 use tracing::{error, info};
-use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::{
+    EnvFilter,
+    fmt::{
+        format::Writer,
+        time::{FormatTime, SystemTime},
+    },
+    layer::SubscriberExt,
+    util::SubscriberInitExt,
+};
 {%- elsif config -%}
 use anyhow::Context;
 use configured::{Case, Configured};
@@ -16,7 +24,15 @@ use serde::Deserialize;
 use serde_json::json;
 use std::{panic, process::ExitCode};
 use tracing::{error, info};
-use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::{
+    EnvFilter,
+    fmt::{
+        format::Writer,
+        time::{FormatTime, SystemTime},
+    },
+    layer::SubscriberExt,
+    util::SubscriberInitExt,
+};
 {%- elsif otel -%}
 use anyhow::Context;
 use opentelemetry::{InstrumentationScope, global, trace::TracerProvider as _};
@@ -26,7 +42,15 @@ use serde::Deserialize;
 use serde_json::json;
 use std::{panic, process::ExitCode};
 use tracing::{error, info};
-use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::{
+    EnvFilter,
+    fmt::{
+        format::Writer,
+        time::{FormatTime, SystemTime},
+    },
+    layer::SubscriberExt,
+    util::SubscriberInitExt,
+};
 {%- else -%}
 use std::{panic, process::ExitCode};
 use tracing::{error, info};
@@ -144,10 +168,16 @@ impl Default for TracingConfig {
 {%- if config or otel %}
 
 fn log_error(error: &anyhow::Error) {
+    let mut timestamp = String::new();
+    SystemTime
+        .format_time(&mut Writer::new(&mut timestamp))
+        .expect("format timestamp into String");
     let error = json!({
+        "timestamp": timestamp,
         "level": "ERROR",
         "message": "process exited with ERROR",
         "error": format!("{error:#}"),
+        "target": module_path!(),
     });
     println!("{error}");
 }
