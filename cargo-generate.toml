@@ -10,4 +10,4 @@ config    = { prompt = "Include configuration?", type = "bool", default = false 
 ignore = ["config"]
 
 [conditional.'otel == false']
-ignore = ["docker-compose.yaml", "otel-collector-config.yaml"]
+ignore = ["compose.yaml", "otel-collector-config.yaml"]
